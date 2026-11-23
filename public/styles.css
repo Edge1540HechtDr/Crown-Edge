@@ -58,6 +58,8 @@ input:focus-visible, button:focus-visible, .btn:focus-within { outline: 3px soli
 .app { position: fixed; inset: 0; }
 #map { position: absolute; inset: 0 0 calc(var(--tabs) + var(--safe-b)) 0; background: var(--panel); }
 .leaflet-container { font: inherit; background: var(--panel); }
+/* Turn the standard (light) OpenStreetMap into a night map; markers and routes are not affected. */
+.leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6); }
 .leaflet-control-attribution { font-size: 10px; }
 .topbar { position: absolute; z-index: 1000; top: calc(10px + var(--safe-t)); left: 10px; right: 10px;
   display: flex; align-items: center; gap: 8px; pointer-events: none; }

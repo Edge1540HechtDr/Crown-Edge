@@ -73,9 +73,11 @@
 
   // ---------- map ----------
   const map = L.map('map', { zoomControl: false, attributionControl: true }).setView([41.99, -88.18], 11);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19, subdomains: 'abcd',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  // OpenStreetMap tiles: free, no key. Darkened with CSS (.leaflet-tile-pane) to match the navy theme.
+  // For a public launch, switch to a paid tile provider (MapTiler, Mapbox, Stadia) per OSM's tile usage policy.
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
   const layers = { drivers: L.layerGroup().addTo(map), pins: L.layerGroup().addTo(map), route: L.layerGroup().addTo(map), build: L.layerGroup().addTo(map) };
   const driverMarkers = new Map();

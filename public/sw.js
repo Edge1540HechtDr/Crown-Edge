@@ -1,5 +1,5 @@
 // Caches the app shell so it opens fast and can be installed to the home screen.
-const CACHE = 'crown-edge-v5';
+const CACHE = 'crown-edge-v6';
 const SHELL = ['/', '/index.html', '/styles.css', '/app.js', '/icon-192.png', '/crown.png', '/fonts/fonts.css', '/manifest.json', '/vendor/leaflet/leaflet.css', '/vendor/leaflet/leaflet.js'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
