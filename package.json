@@ -1,0 +1,23 @@
+{
+  "name": "crown-edge",
+  "version": "0.1.0",
+  "description": "Group driving app: send routes, share live location, drop hazard pins, group and private chat.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/e2e.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "leaflet": "1.9.4",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}
