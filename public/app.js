@@ -460,11 +460,52 @@
     } catch (err) { toast('Could not read that GPX file.'); }
   });
 
+  // Google Maps links take a start point, up to 8 via points and a destination (10 total).
+  // With only the organizer's few stops, Google fills the gaps with its own fastest roads,
+  // so we add via points spread along the actual road-following line to pin it to our route.
+  const NAV_MAX = 10;
   function navStops(r) {
-    // Pick up to 10 points along the route for handing off to a navigation app.
-    let pts = r.waypoints && r.waypoints.length >= 2 ? r.waypoints : r.line;
-    if (pts.length > 10) { const step = (pts.length - 1) / 9; pts = Array.from({ length: 10 }, (_, i) => pts[Math.round(i * step)]); }
-    return pts;
+    const line = r.line && r.line.length >= 2 ? r.line : r.waypoints;
+    const P = (p) => ({ lat: p[0], lng: p[1] });
+    const cum = [0];
+    for (let i = 1; i < line.length; i++) cum.push(cum[i - 1] + dist(P(line[i - 1]), P(line[i])));
+    const total = cum[cum.length - 1] || 1;
+    const nearestIdx = (p) => { let bi = 0, bd = Infinity; line.forEach((q, i) => { const d = dist(P(p), P(q)); if (d < bd) { bd = d; bi = i; } }); return bi; };
+    // Organizer's own stops come first (they matter most), placed by where they sit along the line.
+    let picks = (r.waypoints || []).map((p) => ({ p, at: cum[nearestIdx(p)], must: true }));
+    if (picks.length > NAV_MAX) {
+      const step = (picks.length - 1) / (NAV_MAX - 1);
+      picks = Array.from({ length: NAV_MAX }, (_, i) => picks[Math.round(i * step)]);
+    }
+    picks.push({ p: line[0], at: 0, must: true }, { p: line[line.length - 1], at: total, must: true });
+    // Fill the free slots with points spread evenly along the road line, skipping any too close to an existing pick.
+    const free = NAV_MAX - new Set(picks.map((x) => Math.round(x.at / 50))).size; // start/end may already be stops
+    const minGap = total / (NAV_MAX * 2);
+    for (let j = 1; j <= free; j++) {
+      const target = (total * j) / (free + 1);
+      if (picks.some((x) => Math.abs(x.at - target) < minGap)) continue;
+      let i = cum.findIndex((c) => c >= target); if (i < 0) i = line.length - 1;
+      picks.push({ p: line[i], at: cum[i] });
+    }
+    picks.sort((a, b) => a.at - b.at);
+    const out = [];
+    for (const x of picks) if (!out.length || dist(P(out[out.length - 1]), P(x.p)) > 50) out.push(x.p);
+    if (out.length <= NAV_MAX) return out;
+    // Too many: always keep start and finish, thin out the middle evenly.
+    const step = (out.length - 1) / (NAV_MAX - 1);
+    return Array.from({ length: NAV_MAX }, (_, i) => out[Math.round(i * step)]);
+  }
+  // GPX track of the exact line, for apps that follow a route precisely (Garmin, Scenic, Calimoto, Kurviger…).
+  function downloadGpx(r) {
+    const xmlEsc = (s) => String(s).replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+    const pts = r.line.map((p) => `<trkpt lat="${p[0]}" lon="${p[1]}"/>`).join('');
+    const wpts = (r.waypoints || []).map((p, i) => `<wpt lat="${p[0]}" lon="${p[1]}"><name>Stop ${i + 1}</name></wpt>`).join('');
+    const gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="Crown Edge" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>${xmlEsc(r.name)}</name></metadata>${wpts}<trk><name>${xmlEsc(r.name)}</name><trkseg>${pts}</trkseg></trk></gpx>`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([gpx], { type: 'application/gpx+xml' }));
+    a.download = (r.name || 'route').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') + '.gpx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }
   const ll = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`;
   function googleUrl(r) {
@@ -488,11 +529,14 @@
         <a class="btn small" href="${googleUrl(r)}" target="_blank" rel="noopener">Google Maps</a>
         <a class="btn small" href="${appleUrl(r)}" target="_blank" rel="noopener">Apple Maps</a>
         <a class="btn small" href="${wazeUrl(r)}" target="_blank" rel="noopener">Waze (to start)</a>
+        <button class="btn small" data-gpx="${r.id}">Download GPX</button>
         ${r.by === S.me.id ? `<button class="btn small danger" data-delroute="${r.id}">Delete</button>` : ''}
       </div></li>`).join('');
   }
   $('#routeList').addEventListener('click', (e) => {
     const s = e.target.closest('[data-show]'); if (s) { S.activeRoute === s.dataset.show ? hideRoute() : showRoute(s.dataset.show, true); renderRoutes(); }
+    const g = e.target.closest('[data-gpx]');
+    if (g) { const r = S.routes.find((x) => x.id === g.dataset.gpx); if (r) { downloadGpx(r); toast('GPX downloaded — open it in Garmin, Scenic, Calimoto or Kurviger to follow the exact route'); } }
     const d = e.target.closest('[data-delroute]');
     if (d) {
       if (d.dataset.confirm !== '1') { d.dataset.confirm = '1'; d.textContent = 'Tap again to delete'; return; }
