@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0A1628">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Crown Edge">
+<meta name="description" content="Crown Edge — built for the drive! Share routes, see your crew live, warn each other about police and debris, and chat.">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Crown Edge</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Join screen -->
+<section id="join" class="join">
+  <form id="joinForm" class="join-card" autocomplete="on">
+    <div class="brand"><img class="crown" src="crown.png" alt="" width="62" height="64"><div><h1 class="wordmark" aria-label="Crown Edge"><span class="wm-crown">Crown</span><span class="wm-edge">Edge</span></h1><p class="tagline">Built for the drive!</p></div></div>
+    <p class="muted">Drive together. Share routes, see your crew on the map, warn each other about police and debris, and chat.</p>
+    <label>Your name<input id="jName" name="name" required maxlength="32" placeholder="e.g. Bill"></label>
+    <label><span>Vehicle <span class="muted">(optional)</span></span><input id="jVehicle" name="vehicle" maxlength="40" placeholder="e.g. Black Mustang GT"></label>
+    <label>Group code<input id="jCode" name="code" required maxlength="24" placeholder="e.g. SUNDAY-RUN" autocapitalize="characters"></label>
+    <p class="hint">Everyone who enters the same code joins the same crew.</p>
+    <button class="btn primary big" type="submit">Join crew</button>
+    <p id="joinErr" class="err" role="alert"></p>
+  </form>
+</section>
+
+<!-- Main app -->
+<section id="app" class="app" hidden>
+  <header class="topbar">
+    <button id="codeBtn" class="chip" title="Copy invite">#<span id="codeLabel"></span></button>
+    <span id="conn" class="conn" title="Connection">●</span>
+    <span class="spacer"></span>
+    <span id="crewCount" class="chip ghost"></span>
+  </header>
+
+  <div id="map"></div>
+
+  <div id="alertBanner" class="alert-banner" hidden role="alert"></div>
+  <div id="routeBar" class="route-bar" hidden></div>
+
+  <!-- Route builder toolbar -->
+  <div id="builder" class="builder" hidden>
+    <div class="builder-head"><strong>New route</strong><span id="bInfo" class="muted">Tap the map to add stops</span></div>
+    <div class="builder-row">
+      <button class="btn" id="bUndo">Undo</button>
+      <button class="btn" id="bClear">Clear</button>
+      <label class="toggle"><input type="checkbox" id="bSnap" checked> Follow roads</label>
+    </div>
+    <input id="bName" maxlength="60" placeholder="Route name (e.g. Lake Geneva loop)">
+    <input id="bNote" maxlength="280" placeholder="Note for the crew (meet time, gas stops…)">
+    <div class="builder-row">
+      <button class="btn" id="bCancel">Cancel</button>
+      <button class="btn primary" id="bSend">Send to crew</button>
+    </div>
+  </div>
+
+  <!-- Floating controls -->
+  <div class="fabs left">
+    <button id="shareBtn" class="fab share" aria-pressed="false"><span class="dot"></span><span id="shareLabel">Share location</span></button>
+  </div>
+  <div class="fabs right">
+    <button id="centerBtn" class="fab round" title="Center on me" aria-label="Center on me">
+      <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+    </button>
+    <button id="reportBtn" class="fab report" aria-label="Report a hazard">
+      <svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 3 2 21h20L12 3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v5M12 18v.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <span>Report</span>
+    </button>
+  </div>
+
+  <!-- Bottom sheet panels -->
+  <div id="sheet" class="sheet" hidden>
+    <div class="sheet-grip"></div>
+    <div id="panel-report" class="panel" hidden>
+      <h2>Report at your location</h2>
+      <p id="reportWhere" class="muted">Long-press the map to report somewhere else.</p>
+      <div id="pinGrid" class="pin-grid"></div>
+      <input id="pinNote" maxlength="140" placeholder="Optional note (e.g. right lane, NB side)">
+    </div>
+
+    <div id="panel-routes" class="panel" hidden>
+      <div class="panel-head">
+        <h2>Routes</h2>
+        <div class="row">
+          <label class="btn file">Import GPX<input type="file" id="gpxInput" accept=".gpx,application/gpx+xml,application/xml,text/xml" hidden></label>
+          <button class="btn primary" id="newRouteBtn">New route</button>
+        </div>
+      </div>
+      <ul id="routeList" class="list"></ul>
+    </div>
+
+    <div id="panel-chat" class="panel" hidden>
+      <div id="threadList">
+        <h2>Chat</h2>
+        <ul id="threads" class="list"></ul>
+      </div>
+      <div id="convo" class="convo" hidden>
+        <div class="panel-head">
+          <button class="btn ghost" id="backThreads" aria-label="Back">‹ Back</button>
+          <h2 id="convoTitle"></h2>
+        </div>
+        <div id="messages" class="messages"></div>
+        <div class="quick" id="quick"></div>
+        <form id="chatForm" class="chat-form">
+          <input id="chatInput" maxlength="1000" placeholder="Message" autocomplete="off">
+          <button class="btn primary" type="submit">Send</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="panel-crew" class="panel" hidden>
+      <h2>Crew</h2>
+      <ul id="crewList" class="list"></ul>
+      <button class="btn ghost" id="leaveBtn">Leave group</button>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button data-tab="map" class="tab active">Map</button>
+    <button data-tab="routes" class="tab">Routes</button>
+    <button data-tab="chat" class="tab">Chat<span id="chatBadge" class="badge" hidden></span></button>
+    <button data-tab="crew" class="tab">Crew</button>
+  </nav>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

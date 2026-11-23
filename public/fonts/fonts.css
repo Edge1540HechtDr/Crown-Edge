@@ -1,0 +1,10 @@
+/* Bundled fonts (SIL Open Font License / Apache 2.0) so they load without Google Fonts. */
+@font-face{font-family:"Audiowide";src:url(audiowide-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Permanent Marker";src:url(permanent-marker-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Barlow";src:url(barlow-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Barlow";src:url(barlow-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Barlow";src:url(barlow-latin-600-normal.woff2) format("woff2");font-weight:600 700;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url(barlow-condensed-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url(barlow-condensed-latin-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url(barlow-condensed-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url(barlow-condensed-latin-800-normal.woff2) format("woff2");font-weight:800;font-display:swap}
